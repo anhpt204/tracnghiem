@@ -6,8 +6,9 @@ Created on May 28, 2015
 '''
 from django.contrib.admin.options import TabularInline, ModelAdmin,\
     StackedInline
-from quiz.models import CaThi, DMLop, DMMonThi, DMSinhVien, QuestionGroup, Question,\
-    CaThi_Setting, Answer, MCQuestion, EssayQuestion, TFQuestion
+from quiz.models import CaThi, Lop, MonThi, SinhVien, QuestionGroup, Question,\
+    QuestionGroup_Setting, Answer, MCQuestion, EssayQuestion, TFQuestion, Chapter_Setting,\
+    DonVi, GiaoVien
 
 from django.contrib import admin
 from django.forms.models import ModelForm, ModelMultipleChoiceField
@@ -19,13 +20,22 @@ class AnswerInLine(TabularInline):
     model = Answer
     
 class SinhVienInLine(TabularInline):
-    model = DMSinhVien;
+    model = SinhVien;
 #     fields = ('ma_sv', 'ho_ten', 'gioi_tinh', 'ngay_sinh', 'que_quan')
     fields = ('ma_sv', 'ho_ten')
     
-class CaThi_SettingInLine(TabularInline):
-    model = CaThi_Setting
+class DSSinhVienThiInLine(TabularInline):
+    model=CaThi.ds_sv_thi.through
+#     fields=('ds-sv_thi.ma_sv', 'ho_ten', 'lop')
+        
+    
+class QuestionGroup_SettingInLine(TabularInline):
+    model = QuestionGroup_Setting
     fields=('question_group', 'question_type', 'mark_per_question', 'num_of_questions')
+
+class Chapter_SettingInLine(TabularInline):
+    model = Chapter_Setting
+    fields=('chapter', 'num_of_questions')
     
 # class CaThiAdminForm(ModelForm):
 #     class Meta:
@@ -56,29 +66,40 @@ class CaThi_SettingInLine(TabularInline):
 class CaThiAdmin(ModelAdmin):
 #     form = CaThiAdminForm
     model = CaThi;
-    list_display = ('title', 'lop_thi', 'mon_thi', 'description')
-    fields=('title', 'mon_thi', 'lop_thi', 'ngay_thi', 
+    list_display = ('title', 'mon_thi', 'description')
+    fields=('title', 'mon_thi', 'ngay_thi', 
             'tg_bat_dau', 'tg_ket_thuc', 'pass_mark','tao_moi_de_thi',
             'description')
-    inlines = [CaThi_SettingInLine]
+    exclude=('ds_sv_thi',)
+    inlines = [QuestionGroup_SettingInLine, Chapter_SettingInLine, DSSinhVienThiInLine]
     
-class DMLopAdmin(ModelAdmin):
-    model=DMLop
+class LopAdmin(ModelAdmin):
+    model=Lop
     
     inlines = [SinhVienInLine]
     
-class DMMonThiAdmin(ModelAdmin):
-    model=DMMonThi
+class MonThiAdmin(ModelAdmin):
+    model=MonThi
     
 # class SinhVienInline(StackedInline):
-#     model = DMSinhVien
+#     model = SinhVien
 #     can_delete = False
 #     verbose_name_plural = "Sinh vien"
     
+class DonViAdmin(ModelAdmin):
+    model = DonVi
     
-class DMSinhVienAdmin(ModelAdmin):
-    model = DMSinhVien
+class GiaoVienAdmin(ModelAdmin):
+    model = GiaoVien
+    fields = ('ma_so', 'ho_ten', 'don_vi')
+    list_display=('ma_so','ho_ten','don_vi')
+    search_fields=('ho_ten',)
+    list_filter = ('don_vi',)
     
+class SinhVienAdmin(ModelAdmin):
+    model = SinhVien
+    
+    fields = ('ma-sv', 'ho_ten')
     list_display = ('ma_sv', 'ho_ten')
     search_fields = ('ho_ten',)
     list_filter = ('lop',)
@@ -118,13 +139,15 @@ class EssayQuestionAdmin(ModelAdmin):
               'figure', 'question_group', 'answer' )
     
     
+admin.site.register(DonVi, DonViAdmin)
+admin.site.register(GiaoVien, GiaoVienAdmin)
 admin.site.register(CaThi, CaThiAdmin)
-admin.site.register(DMLop, DMLopAdmin)
-admin.site.register(DMMonThi, DMMonThiAdmin)
+admin.site.register(Lop, LopAdmin)
+admin.site.register(MonThi, MonThiAdmin)
 
-admin.site.register(DMSinhVien, DMSinhVienAdmin)
+admin.site.register(SinhVien, SinhVienAdmin)
 # admin.site.unregister(User)
-# admin.site.register(User, DMSinhVienAdmin)
+# admin.site.register(User, SinhVienAdmin)
 admin.site.register(QuestionGroup, QuestionGroupAdmin)
 admin.site.register(MCQuestion, MCQuestionAdmin)
 admin.site.register(TFQuestion, TFQuestionAdmin)

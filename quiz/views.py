@@ -9,7 +9,7 @@ from django.contrib.auth import authenticate, login
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
-from quiz.models import DMMonThi, CaThi, DeThi, Question, Answer
+from quiz.models import MonThi, CaThi, DeThi, Question, Answer
 from django.template import loader
 from django.views.decorators.csrf import csrf_protect
 from datetime import date, datetime
@@ -27,7 +27,7 @@ def login_user(request):
     logout(request)
     username = password = ''
     
-#     ds_mothi = DMMonThi.objects.all();
+#     ds_mothi = MonThi.objects.all();
     today = datetime.now().date()
     ds_cathi = CaThi.objects.filter(ngay_thi=today)
     template = loader.get_template('login.html')

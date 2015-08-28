@@ -8,7 +8,7 @@ Created on May 28, 2015
 from django.db import models
 from django.db.models.fields import CharField,\
     PositiveIntegerField, TextField, DateField, DateTimeField, BooleanField,\
-    CommaSeparatedIntegerField, TimeField
+    CommaSeparatedIntegerField, TimeField, IntegerField
 from django.db.models.fields.related import ForeignKey, ManyToManyField,\
     OneToOneField
 # from model_utils.managers import InheritanceManager
@@ -20,8 +20,24 @@ from random import sample
 import json
 from quiz import *
 
+class DonVi(models.Model):
+    ma_dv = CharField(verbose_name="Mã đơn vị", unique = True, max_length=5,
+                      help_text="Mã đơn vị không quá 5 ký tự")
+    ten_dv = CharField(verbose_name="Tên đơn vị", unique=True, max_length=200)
+    
+    cha_dv = ForeignKey("DonVi", verbose_name="Đơn vị cấp trên", null=True, blank=True,
+                        help_text="Đơn vị cấp trên trực tiếp")
+    
+    class Meta:
+        verbose_name = "Đơn vị"
+        verbose_name_plural =   "Danh sách đơn vị"
+        
+    def __unicode__(self):
+        return u'%s' %(self.ten_dv)
+    
+    
 # @python_2_unicode_compatible
-class DMMonThi(models.Model):
+class MonThi(models.Model):
     ma_mon_thi = CharField(verbose_name = "Mã môn thi", unique = True, max_length=10)
     ten_mon_thi = CharField(verbose_name = "Môn thi", unique=True,max_length=200) 
     
@@ -33,7 +49,7 @@ class DMMonThi(models.Model):
         return u'%s' %(self.ten_mon_thi)
      
 # @python_2_unicode_compatible
-class DMLop(models.Model):
+class Lop(models.Model):
     ma_lop = CharField(verbose_name="Mã lớp", unique=True, max_length=5)
     ten_lop = CharField(verbose_name = "Lớp", unique=True, max_length=200)
     si_so = PositiveIntegerField(verbose_name="Sĩ số", blank=True,null=True)
@@ -45,7 +61,7 @@ class DMLop(models.Model):
     def __unicode__(self):
         return u'%s' %(self.ten_lop)
 
-class DMSinhVien(models.Model):
+class SinhVien(models.Model):
     user = OneToOneField(User)
     ma_sv=PositiveIntegerField(blank=False, null=False,
                                unique=True,
@@ -53,7 +69,7 @@ class DMSinhVien(models.Model):
     ho_ten = CharField(blank=False, null=False,
                        max_length=50,
                        verbose_name="Họ và tên")
-    lop = ForeignKey(DMLop, blank=False, null=False,
+    lop = ForeignKey(Lop, blank=False, null=False,
                      verbose_name="Lớp")
     # tam the da, co the can them cac truong khac
     
@@ -66,6 +82,9 @@ class DMSinhVien(models.Model):
         return u'%s' %(self.ho_ten)
     
     def save(self, *args, **kwargs):
+        '''
+        when save a student, we also make a user who can login to make exam
+        '''
 #         print self.ma_sv
         u = User.objects.filter(username=self.ma_sv)
         if len(u) == 0: 
@@ -75,18 +94,70 @@ class DMSinhVien(models.Model):
             self.user = new_user
         else:
             self.user = u[0];
-        super(DMSinhVien, self).save(*args, **kwargs)
+        super(SinhVien, self).save(*args, **kwargs)
         
     def delete(self, using=None):
+        '''
+        also delete from user table
+        '''
+        user = User.objects.get_by_natural_key(self.ma_sv)
+        User.delete(user, using)
+        models.Model.delete(self, using=using)
+        
+class GiaoVien(models.Model):
+    user = OneToOneField(User)
+    ma_so=PositiveIntegerField(blank=False, null=False,
+                               unique=True,
+                               verbose_name="Mã số")
+    
+    ho_ten = CharField(blank=False, null=False,
+                       max_length=50,
+                       verbose_name="Họ và tên")
+    
+    don_vi = ForeignKey(DonVi, verbose_name='Đơn vị', help_text="Đơn vị quản lý trực tiếp")
+    
+#     lop = ForeignKey(Lop, blank=False, null=False,
+#                      verbose_name="Lớp")
+    # tam the da, co the can them cac truong khac
+    
+
+    class Meta:
+        verbose_name = "Giáo viên"
+        verbose_name_plural = "Danh sách giáo viên"
+
+    def __unicode__(self):
+        return u'%s' %(self.ho_ten)
+    
+    def save(self, *args, **kwargs):
+        '''
+        when save a student, we also make a user who can login to make exam
+        '''
+        # check if this GV already exist in user table
+        u = User.objects.filter(username=self.ma_so)
+        # if not
+        if len(u) == 0:
+            # then create a new user 
+            new_user = User.objects.create_user(username=self.ma_so, password=self.ma_so)
+            new_user.is_staff = True
+            new_user.save()
+            self.user = new_user
+        else:
+            self.user = u[0];
+        super(GiaoVien, self).save(*args, **kwargs)
+        
+    def delete(self, using=None):
+        '''
+        also delete from user table
+        '''
         user = User.objects.get_by_natural_key(self.ma_sv)
         User.delete(user, using)
         models.Model.delete(self, using=using)
         
 class Diem(models.Model):
-    sinh_vien=ForeignKey(DMSinhVien,
+    sinh_vien=ForeignKey(SinhVien,
                          blank=False, null=False, 
                          verbose_name="Sinh viên")
-    mon_thi = ForeignKey(DMMonThi,
+    mon_thi = ForeignKey(MonThi,
                          blank=False, null=False,
                          verbose_name="Môn thi")
     diem=PositiveIntegerField(blank=False, null=False,
@@ -119,17 +190,20 @@ class CaThi(models.Model):
     title = CharField(verbose_name="Ca thi", max_length=200, blank=False)
     
     description=TextField(verbose_name="Ghi chú", blank=True, null=True)
-    mon_thi = ForeignKey(DMMonThi, blank=False, null=False,
+    mon_thi = ForeignKey(MonThi, blank=False, null=False,
                          verbose_name="Môn thi")
-    lop_thi = ForeignKey(DMLop, blank=False, null=False,
-                         verbose_name="Lớp thi")
+#     lop_thi = ForeignKey(Lop, blank=False, null=False,
+#                          verbose_name="Lớp thi")
+    
+    ds_sv_thi = ManyToManyField(SinhVien, verbose_name="Danh sách sinh viên dự thi")
+    
     ngay_thi = DateField(verbose_name="Ngày thi")
     tg_bat_dau=TimeField(verbose_name="Thời gian bắt đầu")
     tg_ket_thuc=TimeField(verbose_name="Thời gian kết thúc")
     
     ds_cau_hoi = CommaSeparatedIntegerField(max_length=1024, 
                                             verbose_name="Danh sach cau hoi (ids)")
-#     setting = ManyToManyField(CaThi_Setting, 
+#     setting = ManyToManyField(QuestionGroup_Setting, 
 #                             verbose_name="Thiết lập cấu hình ca thi")
     tao_moi_de_thi = BooleanField(blank=False, null=False,
                                   verbose_name="Tạo mới đề thi cho các sinh viên",
@@ -169,10 +243,10 @@ class CaThi(models.Model):
         
         # lay danh sach cau hoi cho ca thi
         # lay cathi_setting
-        cathi_settings = CaThi_Setting.objects.filter(ca_thi__exact=self)
+        questionGroup_settings = QuestionGroup_Setting.objects.filter(ca_thi__exact=self)
         # cac cau hoi cua de thi
         questions = []
-        for cathi_setting in cathi_settings:
+        for cathi_setting in questionGroup_settings:
             # lay cau hoi theo nhom va loai (type)
             qs = Question.objects.filter(mon_thi=self.mon_thi,
                                     question_type = cathi_setting.question_type,
@@ -190,8 +264,9 @@ class CaThi(models.Model):
         # tao de thi cho tung sinh vien
 
         # lay danh sach sinh vien cua lop
-        dsSV = DMSinhVien.objects.filter(lop=self.lop_thi)
-
+#         dsSV = SinhVien.objects.filter(lop=self.lop_thi)
+        dsSV = self.ds_sv_thi
+        
         if(self.tao_moi_de_thi == False):
             return
         
@@ -235,7 +310,7 @@ class CaThi(models.Model):
             dethi.ds_cau_hoi =  json.dumps(ds_cauhoi_answer)
             dethi.save()                             
             
-class CaThi_Setting(models.Model):
+class QuestionGroup_Setting(models.Model):
     ca_thi = ForeignKey(CaThi, verbose_name="Ca thi")
     
     question_group = ForeignKey(QuestionGroup, 
@@ -261,6 +336,23 @@ class CaThi_Setting(models.Model):
                              self.num_of_questions,
                              self.mark_per_question)
 
+class Chapter_Setting(models.Model):
+    ca_thi = ForeignKey(CaThi, verbose_name="Ca thi")
+            
+    chapter = PositiveIntegerField(verbose_name="Chương", 
+                                             default=1,
+                                             help_text="ví dụ: 1,2,...") 
+    num_of_questions = PositiveIntegerField(verbose_name="số câu hỏi",
+                                            default=1)
+    
+    class Meta:
+        verbose_name = "Thiết lập số câu hỏi cho từng chương"
+        verbose_name_plural = "Thiết lập số câu hỏi cho từng chương"
+#         managed=False
+        
+    def __unicode__(self):
+        return u'%s:%s' %(self.chapter,
+                             self.num_of_questions)
     
             
 class Question(models.Model):
@@ -271,7 +363,7 @@ class Question(models.Model):
     ca_thi = ManyToManyField(CaThi, 
                         blank=True,
                         verbose_name="Ca thi")
-    mon_thi = ForeignKey(DMMonThi,
+    mon_thi = ForeignKey(MonThi,
                          blank=False, null=False,
                          verbose_name="Môn thi")
     question_group = ForeignKey(QuestionGroup,
@@ -281,6 +373,8 @@ class Question(models.Model):
                               choices=QUESTION_TYPES,
                             default=MCQUESTION,
                             verbose_name="Loại câu hỏi")
+    
+    chapter = PositiveIntegerField(verbose_name="Chương", default=1)
     
     figure = models.ImageField(upload_to='uploads/%Y/%m/%d',
                                blank=True,
@@ -380,7 +474,7 @@ class TFQuestion(Question):
         
         
 class DeThi(models.Model):
-    sinh_vien = ForeignKey(DMSinhVien,
+    sinh_vien = ForeignKey(SinhVien,
                            blank=False,
                            null=False,
                            verbose_name="Sinh Viên")

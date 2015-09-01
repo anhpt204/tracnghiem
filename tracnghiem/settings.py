@@ -39,6 +39,9 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
+    'ajax_filtered_fields',
+    'smart_selects',
+    
     'quiz',
 )
 
@@ -113,5 +116,7 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
     '/var/www/static/',
 )
+
+ADMIN_MEDIA_PREFIX='/static/'
 
 # from django.conf.locale.vi import formats as formats_vi

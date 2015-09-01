@@ -18,6 +18,8 @@ from django.contrib import admin
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
-    
+    url(r'^chaining/', include('smart_selects.urls')),
+    url(r'^ajax_filtered_fields/', include('ajax_filtered_fields.urls')),
+#     (r'^dynamic-media/jsi18n/$', 'django.views.i18n.javascript_catalog'),
     url(r'^quiz/', include('quiz.urls'))
 ]

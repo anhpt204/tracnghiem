@@ -19,6 +19,7 @@ from django.forms.fields import ChoiceField
 from random import sample
 import json
 from quiz import *
+from smart_selects.db_fields import ChainedForeignKey
 
 class DonVi(models.Model):
     ma_dv = CharField(verbose_name="Mã đơn vị", unique = True, max_length=5,
@@ -33,7 +34,10 @@ class DonVi(models.Model):
         verbose_name_plural =   "Danh sách đơn vị"
         
     def __unicode__(self):
-        return u'%s' %(self.ten_dv)
+        if self.cha_dv:
+            return u'%s - %s' %(self.ten_dv, self.cha_dv)
+        else:
+            return u'%s' %(self.ten_dv)
     
     
 # @python_2_unicode_compatible
@@ -79,7 +83,7 @@ class SinhVien(models.Model):
         verbose_name_plural = "Danh sách sinh viên"
 
     def __unicode__(self):
-        return u'%s' %(self.ho_ten)
+        return u'%s-%s' %(self.ho_ten, self.lop.ma_lop)
     
     def save(self, *args, **kwargs):
         '''
@@ -106,6 +110,7 @@ class SinhVien(models.Model):
         
 class GiaoVien(models.Model):
     user = OneToOneField(User)
+    
     ma_so=PositiveIntegerField(blank=False, null=False,
                                unique=True,
                                verbose_name="Mã số")
@@ -126,30 +131,31 @@ class GiaoVien(models.Model):
         verbose_name_plural = "Danh sách giáo viên"
 
     def __unicode__(self):
-        return u'%s' %(self.ho_ten)
+        return u'%s (%s)' %(self.ho_ten, self.don_vi)
     
     def save(self, *args, **kwargs):
         '''
         when save a student, we also make a user who can login to make exam
         '''
+        u = 'GV'+str(self.ma_so)
         # check if this GV already exist in user table
-        u = User.objects.filter(username=self.ma_so)
+        users = User.objects.filter(username=u)
         # if not
-        if len(u) == 0:
+        if len(users) == 0:
             # then create a new user 
-            new_user = User.objects.create_user(username=self.ma_so, password=self.ma_so)
+            new_user = User.objects.create_user(username=u, password=self.ma_so)
             new_user.is_staff = True
             new_user.save()
             self.user = new_user
         else:
-            self.user = u[0];
+            self.user = users[0];
         super(GiaoVien, self).save(*args, **kwargs)
         
     def delete(self, using=None):
         '''
         also delete from user table
         '''
-        user = User.objects.get_by_natural_key(self.ma_sv)
+        user = User.objects.get_by_natural_key(self.ma_so)
         User.delete(user, using)
         models.Model.delete(self, using=using)
         
@@ -160,9 +166,16 @@ class Diem(models.Model):
     mon_thi = ForeignKey(MonThi,
                          blank=False, null=False,
                          verbose_name="Môn thi")
-    diem=PositiveIntegerField(blank=False, null=False,
+    
+    trang_thai_thi = CharField(max_length=20,
+                               choices=TRANG_THAI_THI,
+                               default='DA_THI',
+                               verbose_name='Trạng thái thi')
+    
+    diem=CommaSeparatedIntegerField(max_length=5, blank=True, null=True,
                               verbose_name="Điểm")
     class Meta:
+        unique_together = (('sinh_vien', 'mon_thi'),)
         verbose_name = "Điểm"
         verbose_name_plural = "Bảng điểm"
 
@@ -181,6 +194,21 @@ class QuestionGroup(models.Model):
     def __unicode__(self):
         return u'%s-%s' %(self.name, self.description)
 
+class Lop_CaThi(models.Model):
+    '''
+    Dinh nghia mot lop cho moi ca thi, lop_cathi co the la ket hop cua nhieu lop
+    hoac mot so sinh vien. Thich hop cho viec ghep lop thi, thi lai,...
+    '''
+    lop = ForeignKey(Lop, 
+                     verbose_name="Lớp thi")
+    
+#     ds_sinhvien = ChainedForeignKey(SinhVien,
+#                                     chained_field='lop',
+#                                     chained_model_field='lop',
+#                                     show_all=True,
+#                                     auto_choose=False)
+    
+    ds_sinhvien = ManyToManyField(SinhVien)
 
 class CaThi(models.Model):
     '''
@@ -194,8 +222,13 @@ class CaThi(models.Model):
                          verbose_name="Môn thi")
 #     lop_thi = ForeignKey(Lop, blank=False, null=False,
 #                          verbose_name="Lớp thi")
+#     ds_thisinh = ForeignKey(Lop_CaThi, blank=False, null=False, 
+#                          verbose_name="Danh sách thí sinh")
+    ds_giamthi = ManyToManyField(GiaoVien, verbose_name=u'Danh sách giám thị coi thi')
     
-    ds_sv_thi = ManyToManyField(SinhVien, verbose_name="Danh sách sinh viên dự thi")
+    ds_thisinh = ManyToManyField(SinhVien, blank=False, 
+                                verbose_name=u"Danh sách thí sinh")
+    ds_thisinh.help_text = 'Tìm kiếm theo họ tên sinh viên hoặc mã lớp.'
     
     ngay_thi = DateField(verbose_name="Ngày thi")
     tg_bat_dau=TimeField(verbose_name="Thời gian bắt đầu")
@@ -240,75 +273,76 @@ class CaThi(models.Model):
         return u'%s' %(self.title)
     
     def save(self, *args, **kwargs):
-        
-        # lay danh sach cau hoi cho ca thi
-        # lay cathi_setting
-        questionGroup_settings = QuestionGroup_Setting.objects.filter(ca_thi__exact=self)
-        # cac cau hoi cua de thi
-        questions = []
-        for cathi_setting in questionGroup_settings:
-            # lay cau hoi theo nhom va loai (type)
-            qs = Question.objects.filter(mon_thi=self.mon_thi,
-                                    question_type = cathi_setting.question_type,
-                                    question_group = cathi_setting.question_group)
-            # lay id
-            q_ids = qs.values_list('id', flat=True)
-            # lay ngau nhien so cau hoi
-            
-            questions += sample(q_ids, cathi_setting.num_of_questions)
-        
-        self.ds_cau_hoi = ','.join(map(str, questions)) + ","
-        
         # luu CaThi va Cathi_Setting
         super(CaThi, self).save(*args, **kwargs)
-        # tao de thi cho tung sinh vien
-
-        # lay danh sach sinh vien cua lop
-#         dsSV = SinhVien.objects.filter(lop=self.lop_thi)
-        dsSV = self.ds_sv_thi
-        
-        if(self.tao_moi_de_thi == False):
-            return
-        
-        # voi moi sinh vien, tao mot de thi
-        for sv in dsSV:
-            # tao de thi
-            dethi = DeThi.objects.update_or_create(sinh_vien=sv,
-                                                   ca_thi=self,
-                                                   )[0]
-            # lay ngau nhien cau hoi trong ngan hang de
-            ds_cauhoi = sample(questions, len(questions))
-            ds_cauhoi_answer = []
-            for cauhoi_id in ds_cauhoi:
-                # lay cau hoi voi id tuong ung
-                q = Question.objects.get(id=cauhoi_id)
-                # neu cau hoi la multichoice question thi hoan doi thu tu
-                # cau tra loi
-                if q.question_type == MCQUESTION:
-                    # lay cac cau tra loi cua cau hoi nay
-#                     q = (MCQuestion)q
-                    
-#                     answers = Answer.objects.filter(question=q.id)
-                    q.__class__ = MCQuestion
-                    answers = q.getAnswers()
-                    
-                    # lay id cua cac cau hoi
-                    answer_ids = answers.values_list('id', flat=True)
-                    
-                    # dao thu tu cau tra loi
-                    answer_ids = sample(answer_ids, len(answer_ids))
-                    
-                    # add vao mot dictionary
-                    ds_cauhoi_answer.append((cauhoi_id, answer_ids))
-                
-                elif q.question_type == TFQUESTION:
-                    ds_cauhoi_answer.append((cauhoi_id, [1, 0]))
-                
-                else:
-                    ds_cauhoi_answer.append((cauhoi_id, []))
-                    
-            dethi.ds_cau_hoi =  json.dumps(ds_cauhoi_answer)
-            dethi.save()                             
+#         # lay danh sach cau hoi cho ca thi
+#         # lay cathi_setting
+        questionGroup_settings = QuestionGroup_Setting.objects.filter(ca_thi__exact=self)
+#         # cac cau hoi cua de thi
+        questions = []
+#         for cathi_setting in questionGroup_settings:
+#             # lay cau hoi theo nhom va loai (type)
+#             qs = Question.objects.filter(mon_thi=self.mon_thi,
+#                                     question_type = cathi_setting.question_type,
+#                                     question_group = cathi_setting.question_group)
+#             # lay id
+#             q_ids = qs.values_list('id', flat=True)
+#             # lay ngau nhien so cau hoi
+#             
+#             questions += sample(q_ids, cathi_setting.num_of_questions)
+#         
+#         self.ds_cau_hoi = ','.join(map(str, questions)) + ","
+#         
+#         # luu CaThi-ds_cauhoi
+#         super(CaThi, self).save(*args, **kwargs)
+#         # tao de thi cho tung sinh vien
+# 
+#         # lay danh sach sinh vien cua lop
+# #         dsSV = SinhVien.objects.filter(lop=self.lop_thi)
+#         dsSV = self.ds_thisinh
+#         
+#         if(self.tao_moi_de_thi == False):
+#             return
+#         
+#         # voi moi sinh vien, tao mot de thi
+#         for sv in dsSV:
+#             # tao de thi
+#             dethi = DeThi.objects.update_or_create(sinh_vien=sv,
+#                                                    ca_thi=self,
+#                                                    )[0]
+#             # lay ngau nhien cau hoi trong ngan hang de
+#             ds_cauhoi = sample(questions, len(questions))
+#             ds_cauhoi_answer = []
+#             for cauhoi_id in ds_cauhoi:
+#                 # lay cau hoi voi id tuong ung
+#                 q = Question.objects.get(id=cauhoi_id)
+#                 # neu cau hoi la multichoice question thi hoan doi thu tu
+#                 # cau tra loi
+#                 if q.question_type == MCQUESTION:
+#                     # lay cac cau tra loi cua cau hoi nay
+# #                     q = (MCQuestion)q
+#                     
+# #                     answers = Answer.objects.filter(question=q.id)
+#                     q.__class__ = MCQuestion
+#                     answers = q.getAnswers()
+#                     
+#                     # lay id cua cac cau hoi
+#                     answer_ids = answers.values_list('id', flat=True)
+#                     
+#                     # dao thu tu cau tra loi
+#                     answer_ids = sample(answer_ids, len(answer_ids))
+#                     
+#                     # add vao mot dictionary
+#                     ds_cauhoi_answer.append((cauhoi_id, answer_ids))
+#                 
+#                 elif q.question_type == TFQUESTION:
+#                     ds_cauhoi_answer.append((cauhoi_id, [1, 0]))
+#                 
+#                 else:
+#                     ds_cauhoi_answer.append((cauhoi_id, []))
+#                     
+#             dethi.ds_cau_hoi =  json.dumps(ds_cauhoi_answer)
+#             dethi.save()                             
             
 class QuestionGroup_Setting(models.Model):
     ca_thi = ForeignKey(CaThi, verbose_name="Ca thi")

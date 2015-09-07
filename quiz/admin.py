@@ -8,15 +8,15 @@ from django.contrib.admin.options import TabularInline, ModelAdmin,\
     StackedInline
 from quiz.models import CaThi, Lop, MonThi, SinhVien, QuestionGroup, Question,\
     QuestionGroup_Setting, Answer, MCQuestion, EssayQuestion, TFQuestion, Chapter_Setting,\
-    DonVi, GiaoVien, Lop_CaThi, DeThiTuLuan, DoiTuong
-from ajax_filtered_fields.forms import AjaxManyToManyField
+    DonVi, GiaoVien, Lop_CaThi, DeThiTuLuan, DoiTuong, NganHangDeThiTuLuan
+# from ajax_filtered_fields.forms import AjaxManyToManyField
 
 from django.contrib import admin
 from django.forms.models import ModelForm, ModelMultipleChoiceField
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
-from ajax_filtered_fields.forms.fields import ManyToManyByRelatedField
+# from ajax_filtered_fields.forms.fields import ManyToManyByRelatedField
 from tracnghiem import settings
 
 class AnswerInLine(TabularInline):
@@ -41,6 +41,25 @@ class QuestionGroup_SettingInLine(TabularInline):
 class Chapter_SettingInLine(TabularInline):
     model = Chapter_Setting
     fields=('chapter', 'num_of_questions')
+    
+class DeThiTuLuanInline(TabularInline):
+    model = DeThiTuLuan
+    
+class DeThiTuLuanAdmin(ModelAdmin):
+    model = DeThiTuLuan
+    
+    list_display =['ma_de_thi', 'de_thi', 'view_pdf']
+    
+    def view_pdf(self,obj):
+        if obj.de_thi:
+            return u'<a href="%s">View</a>' % obj.de_thi.path
+        else:
+            return '(no file found)'
+        
+    view_pdf.allow_tags = True
+    view_pdf.short_description = 'Xem'
+        
+    
     
 # class CaThiAdminForm(ModelForm):
 #     class Meta:
@@ -68,18 +87,18 @@ class Chapter_SettingInLine(TabularInline):
 #         self.save_m2m()
 #         return cathi
 
-class CaThiForm(ModelForm):
-    ds_sv = ManyToManyByRelatedField(SinhVien, 'lop')
-    
-    class Meta:
-        model = CaThi
-        fields = '__all__'
-        
-    class Media:
-        js=(settings.STATIC_URL + 'quiz/bootstrap/js/ajax_filtered_fields.js',
-            settings.STATIC_URL + 'quiz/bootstrap/js/jquery-1.11.3.js',
-            )
-        
+# class CaThiForm(ModelForm):
+#     ds_sv = ManyToManyByRelatedField(SinhVien, 'lop')
+#     
+#     class Meta:
+#         model = CaThi
+#         fields = '__all__'
+#         
+#     class Media:
+#         js=(settings.STATIC_URL + 'quiz/bootstrap/js/ajax_filtered_fields.js',
+#             settings.STATIC_URL + 'quiz/bootstrap/js/jquery-1.11.3.js',
+#             )
+#         
         
 # class Lop_CaThiAdmin(ModelAdmin):
     
@@ -119,8 +138,10 @@ class LopAdmin(ModelAdmin):
 class DoiTuongAdmin(ModelAdmin):
     model = DoiTuong
     
-class DeThiTuLuanAdmin(ModelAdmin):
-    model = DeThiTuLuan
+class NganHangDeThiTuLuanAdmin(ModelAdmin):
+    model = NganHangDeThiTuLuan
+    inlines=[DeThiTuLuanInline]
+    list_display = ['doi_tuong', 'mon_thi', 'ngay_tao']
     
 class MonThiAdmin(ModelAdmin):
     model=MonThi
@@ -197,6 +218,7 @@ admin.site.register(QuestionGroup, QuestionGroupAdmin)
 admin.site.register(MCQuestion, MCQuestionAdmin)
 admin.site.register(TFQuestion, TFQuestionAdmin)
 admin.site.register(EssayQuestion, EssayQuestionAdmin)
+admin.site.register(NganHangDeThiTuLuan, NganHangDeThiTuLuanAdmin)
 admin.site.register(DeThiTuLuan, DeThiTuLuanAdmin)
 
     

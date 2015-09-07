@@ -20,6 +20,7 @@ from random import sample
 import json
 from quiz import *
 from smart_selects.db_fields import ChainedForeignKey
+from datetime import datetime, date
 
 class DonVi(models.Model):
     ma_dv = CharField(verbose_name="Mã đơn vị", unique = True, max_length=5,
@@ -72,7 +73,8 @@ class Lop(models.Model):
     ma_lop = CharField(verbose_name="Mã lớp", unique=True, max_length=5)
     ten_lop = CharField(verbose_name = "Lớp", unique=True, max_length=200)
     si_so = PositiveIntegerField(verbose_name="Sĩ số", blank=True,null=True)
-    doi_tuong = ForeignKey(DoiTuong, verbose_name="Đối tượng", blank=True, null=True)
+    doi_tuong = ForeignKey(DoiTuong, verbose_name="Đối tượng", 
+                           blank=False, null=False)
 
     class Meta:
         verbose_name = "Lớp"
@@ -574,7 +576,7 @@ class DeThi(models.Model):
                 
         return questions
     
-class DeThiTuLuan(models.Model):
+class NganHangDeThiTuLuan(models.Model):
     doi_tuong = ForeignKey(DoiTuong,
                            blank=False, null=False,
                            verbose_name="Đối tượng thi")
@@ -582,14 +584,21 @@ class DeThiTuLuan(models.Model):
     mon_thi = ForeignKey(MonThi,
                          blank=False, null=False,
                          verbose_name="Môn thi")
+    ngay_tao = models.DateField('Ngày tạo', default=date.today())
     
     
-    file_path = models.FileField(upload_to='uploads/essay/%Y/%m/%d',
+class DeThiTuLuan(models.Model):
+    ngan_hang = models.ForeignKey(NganHangDeThiTuLuan,
+                                  verbose_name="Ngân hàng")
+    
+    ma_de_thi = models.CharField(max_length=10, unique=True,
+                                 verbose_name="Mã đề thi")
+    
+    de_thi = models.FileField(upload_to='uploads/essay/%Y/%m/%d',
                                blank=True,
                                null=True,
                                verbose_name=("Đề thi"))
     
-    ngay_tao = models.DateTimeField('Ngày tạo')
     
 
     

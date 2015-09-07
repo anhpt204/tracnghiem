@@ -39,7 +39,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
-    'ajax_filtered_fields',
+#     'ajax_filtered_fields',
     'smart_selects',
     
     'quiz',

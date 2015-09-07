@@ -8,7 +8,7 @@ from django.contrib.admin.options import TabularInline, ModelAdmin,\
     StackedInline
 from quiz.models import CaThi, Lop, MonThi, SinhVien, QuestionGroup, Question,\
     QuestionGroup_Setting, Answer, MCQuestion, EssayQuestion, TFQuestion, Chapter_Setting,\
-    DonVi, GiaoVien, Lop_CaThi
+    DonVi, GiaoVien, Lop_CaThi, DeThiTuLuan, DoiTuong
 from ajax_filtered_fields.forms import AjaxManyToManyField
 
 from django.contrib import admin
@@ -116,6 +116,12 @@ class LopAdmin(ModelAdmin):
     
     inlines = [SinhVienInLine]
     
+class DoiTuongAdmin(ModelAdmin):
+    model = DoiTuong
+    
+class DeThiTuLuanAdmin(ModelAdmin):
+    model = DeThiTuLuan
+    
 class MonThiAdmin(ModelAdmin):
     model=MonThi
     
@@ -178,6 +184,7 @@ class EssayQuestionAdmin(ModelAdmin):
     
     
 admin.site.register(DonVi, DonViAdmin)
+admin.site.register(DoiTuong, DoiTuongAdmin)
 admin.site.register(GiaoVien, GiaoVienAdmin)
 admin.site.register(CaThi, CaThiAdmin)
 admin.site.register(Lop, LopAdmin)
@@ -190,6 +197,6 @@ admin.site.register(QuestionGroup, QuestionGroupAdmin)
 admin.site.register(MCQuestion, MCQuestionAdmin)
 admin.site.register(TFQuestion, TFQuestionAdmin)
 admin.site.register(EssayQuestion, EssayQuestionAdmin)
-
+admin.site.register(DeThiTuLuan, DeThiTuLuanAdmin)
 
     

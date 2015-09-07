@@ -39,6 +39,21 @@ class DonVi(models.Model):
         else:
             return u'%s' %(self.ten_dv)
     
+class DoiTuong(models.Model):
+    ma_dt = CharField(unique=True, max_length=10,
+                      verbose_name="Mã đối tượng")
+                      
+    ma_dt.help_text = "Mã không quá " + str(ma_dt.max_length)+" ký tự"
+    
+    ten_dt = CharField(unique=True, max_length=50,
+                       verbose_name = 'Tên đối tượng')
+    
+    class Meta:
+        verbose_name="Đối tượng"
+        verbose_name_plural="Danh sách đối tượng"
+        
+    def __unicode__(self):
+        return u'%s(%s)' %(self.ten_dt, self.ma_dt)
     
 # @python_2_unicode_compatible
 class MonThi(models.Model):
@@ -57,6 +72,7 @@ class Lop(models.Model):
     ma_lop = CharField(verbose_name="Mã lớp", unique=True, max_length=5)
     ten_lop = CharField(verbose_name = "Lớp", unique=True, max_length=200)
     si_so = PositiveIntegerField(verbose_name="Sĩ số", blank=True,null=True)
+    doi_tuong = ForeignKey(DoiTuong, verbose_name="Đối tượng", blank=True, null=True)
 
     class Meta:
         verbose_name = "Lớp"
@@ -64,6 +80,8 @@ class Lop(models.Model):
     
     def __unicode__(self):
         return u'%s' %(self.ten_lop)
+    
+    
 
 class SinhVien(models.Model):
     user = OneToOneField(User)
@@ -274,75 +292,75 @@ class CaThi(models.Model):
     
     def save(self, *args, **kwargs):
         # luu CaThi va Cathi_Setting
-        super(CaThi, self).save(*args, **kwargs)
+#         super(CaThi, self).save(*args, **kwargs)
 #         # lay danh sach cau hoi cho ca thi
 #         # lay cathi_setting
         questionGroup_settings = QuestionGroup_Setting.objects.filter(ca_thi__exact=self)
 #         # cac cau hoi cua de thi
         questions = []
-#         for cathi_setting in questionGroup_settings:
-#             # lay cau hoi theo nhom va loai (type)
-#             qs = Question.objects.filter(mon_thi=self.mon_thi,
-#                                     question_type = cathi_setting.question_type,
-#                                     question_group = cathi_setting.question_group)
-#             # lay id
-#             q_ids = qs.values_list('id', flat=True)
-#             # lay ngau nhien so cau hoi
-#             
-#             questions += sample(q_ids, cathi_setting.num_of_questions)
-#         
-#         self.ds_cau_hoi = ','.join(map(str, questions)) + ","
-#         
-#         # luu CaThi-ds_cauhoi
-#         super(CaThi, self).save(*args, **kwargs)
-#         # tao de thi cho tung sinh vien
-# 
-#         # lay danh sach sinh vien cua lop
-# #         dsSV = SinhVien.objects.filter(lop=self.lop_thi)
-#         dsSV = self.ds_thisinh
-#         
-#         if(self.tao_moi_de_thi == False):
-#             return
-#         
-#         # voi moi sinh vien, tao mot de thi
-#         for sv in dsSV:
-#             # tao de thi
-#             dethi = DeThi.objects.update_or_create(sinh_vien=sv,
-#                                                    ca_thi=self,
-#                                                    )[0]
-#             # lay ngau nhien cau hoi trong ngan hang de
-#             ds_cauhoi = sample(questions, len(questions))
-#             ds_cauhoi_answer = []
-#             for cauhoi_id in ds_cauhoi:
-#                 # lay cau hoi voi id tuong ung
-#                 q = Question.objects.get(id=cauhoi_id)
-#                 # neu cau hoi la multichoice question thi hoan doi thu tu
-#                 # cau tra loi
-#                 if q.question_type == MCQUESTION:
-#                     # lay cac cau tra loi cua cau hoi nay
-# #                     q = (MCQuestion)q
-#                     
-# #                     answers = Answer.objects.filter(question=q.id)
-#                     q.__class__ = MCQuestion
-#                     answers = q.getAnswers()
-#                     
-#                     # lay id cua cac cau hoi
-#                     answer_ids = answers.values_list('id', flat=True)
-#                     
-#                     # dao thu tu cau tra loi
-#                     answer_ids = sample(answer_ids, len(answer_ids))
-#                     
-#                     # add vao mot dictionary
-#                     ds_cauhoi_answer.append((cauhoi_id, answer_ids))
-#                 
-#                 elif q.question_type == TFQUESTION:
-#                     ds_cauhoi_answer.append((cauhoi_id, [1, 0]))
-#                 
-#                 else:
-#                     ds_cauhoi_answer.append((cauhoi_id, []))
-#                     
-#             dethi.ds_cau_hoi =  json.dumps(ds_cauhoi_answer)
-#             dethi.save()                             
+        for cathi_setting in questionGroup_settings:
+            # lay cau hoi theo nhom va loai (type)
+            qs = Question.objects.filter(mon_thi=self.mon_thi,
+                                    question_type = cathi_setting.question_type,
+                                    question_group = cathi_setting.question_group)
+            # lay id
+            q_ids = qs.values_list('id', flat=True)
+            # lay ngau nhien so cau hoi
+             
+            questions += sample(q_ids, cathi_setting.num_of_questions)
+         
+        self.ds_cau_hoi = ','.join(map(str, questions)) + ","
+         
+        # luu CaThi-ds_cauhoi
+        super(CaThi, self).save(*args, **kwargs)
+        # tao de thi cho tung sinh vien
+ 
+        # lay danh sach sinh vien cua lop
+#         dsSV = SinhVien.objects.filter(lop=self.lop_thi)
+        dsSV = self.ds_thisinh.all()
+         
+        if(self.tao_moi_de_thi == False):
+            return
+         
+        # voi moi sinh vien, tao mot de thi
+        for sv in dsSV:
+            # tao de thi
+            dethi = DeThi.objects.update_or_create(sinh_vien=sv,
+                                                   ca_thi=self,
+                                                   )[0]
+            # lay ngau nhien cau hoi trong ngan hang de
+            ds_cauhoi = sample(questions, len(questions))
+            ds_cauhoi_answer = []
+            for cauhoi_id in ds_cauhoi:
+                # lay cau hoi voi id tuong ung
+                q = Question.objects.get(id=cauhoi_id)
+                # neu cau hoi la multichoice question thi hoan doi thu tu
+                # cau tra loi
+                if q.question_type == MCQUESTION:
+                    # lay cac cau tra loi cua cau hoi nay
+#                     q = (MCQuestion)q
+                     
+#                     answers = Answer.objects.filter(question=q.id)
+                    q.__class__ = MCQuestion
+                    answers = q.getAnswers()
+                     
+                    # lay id cua cac cau hoi
+                    answer_ids = answers.values_list('id', flat=True)
+                     
+                    # dao thu tu cau tra loi
+                    answer_ids = sample(answer_ids, len(answer_ids))
+                     
+                    # add vao mot dictionary
+                    ds_cauhoi_answer.append((cauhoi_id, answer_ids))
+                 
+                elif q.question_type == TFQUESTION:
+                    ds_cauhoi_answer.append((cauhoi_id, [1, 0]))
+                 
+                else:
+                    ds_cauhoi_answer.append((cauhoi_id, []))
+                     
+            dethi.ds_cau_hoi =  json.dumps(ds_cauhoi_answer)
+            dethi.save()                             
             
 class QuestionGroup_Setting(models.Model):
     ca_thi = ForeignKey(CaThi, verbose_name="Ca thi")
@@ -555,4 +573,23 @@ class DeThi(models.Model):
                 questions.append((q, answers))
                 
         return questions
+    
+class DeThiTuLuan(models.Model):
+    doi_tuong = ForeignKey(DoiTuong,
+                           blank=False, null=False,
+                           verbose_name="Đối tượng thi")
+    
+    mon_thi = ForeignKey(MonThi,
+                         blank=False, null=False,
+                         verbose_name="Môn thi")
+    
+    
+    file_path = models.FileField(upload_to='uploads/essay/%Y/%m/%d',
+                               blank=True,
+                               null=True,
+                               verbose_name=("Đề thi"))
+    
+    ngay_tao = models.DateTimeField('Ngày tạo')
+    
+
     

@@ -21,6 +21,7 @@ import json
 from quiz import *
 from smart_selects.db_fields import ChainedForeignKey
 from datetime import datetime, date
+import random
 
 class DonVi(models.Model):
     ma_dv = CharField(verbose_name="Mã đơn vị", unique = True, max_length=5,
@@ -586,8 +587,16 @@ class NganHangDeThiTuLuan(models.Model):
                          verbose_name="Môn thi")
     ngay_tao = models.DateField('Ngày tạo', default=date.today())
     
+    class Meta:
+        verbose_name='Ngân hàng đề thi tự luận'
+    
+    def __unicode__(self):
+        return u'%s(%s)' %(self.mon_thi, self.doi_tuong)
     
 class DeThiTuLuan(models.Model):
+    '''
+    The hien cho 1 de thi tu luan
+    '''
     ngan_hang = models.ForeignKey(NganHangDeThiTuLuan,
                                   verbose_name="Ngân hàng")
     
@@ -599,6 +608,42 @@ class DeThiTuLuan(models.Model):
                                null=True,
                                verbose_name=("Đề thi"))
     
+    def __unicode__(self):
+        return u'%s (%s)' %(self.ma_de_thi, self.ngan_hang)
     
+class CaThiTuLuan(models.Model):
+    doi_tuong = ForeignKey(DoiTuong,
+                           verbose_name="Đối tượng")
+    mon_thi = ForeignKey(MonThi,
+                         verbose_name = "Môn thi")
+    lop = ForeignKey(Lop,
+                     verbose_name = "Lớp")
+    ngay_thi = DateField(verbose_name="Ngày thi")
+    
+#     giam_thi = ManyToManyField(GiaoVien, verbose_name = u'Danh sách giám thị coi thi')
 
+    giam_thi = ManyToManyField(GiaoVien, blank=False,
+                                verbose_name = u"GT")
     
+    so_de_thi = PositiveIntegerField(verbose_name = "Số đề thi",
+                                     default=1,
+                                     help_text = u"Số đề thi là số nguyên dương, lớn hơn 0")
+    ds_de_thi = ManyToManyField(DeThiTuLuan, blank=True, null=True,
+                                verbose_name = u'DT')
+
+    class Meta:
+        verbose_name = u"Ca thi tự luận"
+        verbose_name_plural = u"Danh sách ca thi tự luận"
+
+    def __unicode__(self):
+        return u'%s-%s-%s' %(self.doi_tuong, self.mon_thi, self.lop)
+    
+    def save(self, *args, **kwargs):
+        # lay ngan hang de thi tuong ung voi doi_tuong va mon_thi
+        ngan_hang_dt = NganHangDeThiTuLuan.objects.filter(doi_tuong=self.doi_tuong, 
+                                                          mon_thi=self.mon_thi)
+        # lay so_de_thi
+        de_thi_s = random.sample(ngan_hang_dt, self.so_de_thi)
+        for de_thi in de_thi_s:
+            self.ds_de_thi.add(de_thi)
+        super(CaThiTuLuan, self).save(*args, **kwargs)

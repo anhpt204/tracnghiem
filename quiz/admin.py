@@ -8,7 +8,8 @@ from django.contrib.admin.options import TabularInline, ModelAdmin,\
     StackedInline
 from quiz.models import CaThi, Lop, MonThi, SinhVien, QuestionGroup, Question,\
     QuestionGroup_Setting, Answer, MCQuestion, EssayQuestion, TFQuestion, Chapter_Setting,\
-    DonVi, GiaoVien, Lop_CaThi, DeThiTuLuan, DoiTuong, NganHangDeThiTuLuan
+    DonVi, GiaoVien, Lop_CaThi, DeThiTuLuan, DoiTuong, NganHangDeThiTuLuan,\
+    CaThiTuLuan
 # from ajax_filtered_fields.forms import AjaxManyToManyField
 
 from django.contrib import admin
@@ -18,6 +19,8 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 # from ajax_filtered_fields.forms.fields import ManyToManyByRelatedField
 from tracnghiem import settings
+# from httplib import HTTPResponse
+from django.http.response import HttpResponse
 
 class AnswerInLine(TabularInline):
     model = Answer
@@ -48,11 +51,11 @@ class DeThiTuLuanInline(TabularInline):
 class DeThiTuLuanAdmin(ModelAdmin):
     model = DeThiTuLuan
     
-    list_display =['ma_de_thi', 'de_thi', 'view_pdf']
+    list_display =['ma_de_thi', 'ngan_hang', 'de_thi', 'view_pdf']
     
     def view_pdf(self,obj):
-        if obj.de_thi:
-            return u'<a href="%s">View</a>' % obj.de_thi.path
+        if obj.de_thi:            
+            return u'<a href="%s">View</a>' % ('/quiz/tuluan/preview/'+str(obj.pk)+'/')
         else:
             return '(no file found)'
         
@@ -203,6 +206,9 @@ class EssayQuestionAdmin(ModelAdmin):
     fields = ('mon_thi', 'content',
               'figure', 'question_group', 'answer' )
     
+class CaThiTuLuanAdmin(ModelAdmin):
+    model=CaThiTuLuan
+#     fields=('doi_tuong', 'mon_thi', 'lop', 'ngay_thi', 'giam_thi', 'so_de_thi')
     
 admin.site.register(DonVi, DonViAdmin)
 admin.site.register(DoiTuong, DoiTuongAdmin)
@@ -220,5 +226,6 @@ admin.site.register(TFQuestion, TFQuestionAdmin)
 admin.site.register(EssayQuestion, EssayQuestionAdmin)
 admin.site.register(NganHangDeThiTuLuan, NganHangDeThiTuLuanAdmin)
 admin.site.register(DeThiTuLuan, DeThiTuLuanAdmin)
+admin.site.register(CaThiTuLuan, CaThiTuLuanAdmin)
 
     

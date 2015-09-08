@@ -16,5 +16,6 @@ urlpatterns = [
     url(r'^cathi/(?P<pk>[\d]+)/$', CathiDetailView.as_view(), name="cathi_detail"),
     url(r'^cathi/(?P<pk>[\d]+)/start/$', DethiStartView.as_view(), name='dethi_start'),
     url(r'^cathi/(?P<pk>[\d]+)/start/finish/$', views.quiz_finish, name='quiz_finish'),
+    url(r'^tuluan/preview/(?P<pk>[\d]+)/$', views.view_pdf, name='view_pdf'),
     
 ]

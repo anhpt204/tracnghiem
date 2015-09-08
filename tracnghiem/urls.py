@@ -15,9 +15,11 @@ Including another URLconf
 """
 from django.conf.urls import include, url
 from django.contrib import admin
+# from quiz.views import view_pdf
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
+
     url(r'^chaining/', include('smart_selects.urls')),
 #     url(r'^ajax_filtered_fields/', include('ajax_filtered_fields.urls')),
 #     (r'^dynamic-media/jsi18n/$', 'django.views.i18n.javascript_catalog'),

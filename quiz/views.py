@@ -9,7 +9,7 @@ from django.contrib.auth import authenticate, login
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
-from quiz.models import MonThi, CaThi, DeThi, Question, Answer
+from quiz.models import MonThi, CaThi, DeThi, Question, Answer, DeThiTuLuan
 from django.template import loader
 from django.views.decorators.csrf import csrf_protect
 from datetime import date, datetime
@@ -19,6 +19,7 @@ from django.views.generic.list import ListView
 import json
 from quiz import ESSAYQUESTION, TFQUESTION
 from django.utils.datastructures import MultiValueDictKeyError
+from os.path import basename
 
 def index(request):
     return HttpResponse("Hello, world. You're at the polls index.")
@@ -96,3 +97,13 @@ class DethiStartView(DetailView):
         return context
         
         
+def view_pdf(request, pk):
+    dt = DeThiTuLuan.objects.get(pk=pk)
+    if dt:
+        file_name = basename(dt.de_thi.path)
+        pdf = open(dt.de_thi.path, 'r').read()
+        response = HttpResponse(pdf, content_type='application/pdf')
+        response['Content-Disposition'] = 'inline; filename=%s' %(file_name)
+        return response
+    else:
+        return HttpResponse(u'No file %s' %(file_name))

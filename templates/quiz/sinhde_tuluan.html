@@ -1,0 +1,48 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+{% extends 'base.html' %}
+
+
+{% block title %}
+Sinh đề thi tự luận
+{% endblock %}
+
+
+{% block content %}
+<div class="jumbotron">
+  <h1>{{ object.ten_ca_thi }}</h1>
+  
+  <h4>Môn thi: {{ object.mon_thi.ten_mon_thi }}</h4>
+  <h4>Đối tượng: {{ object.doi_tuong.ten_dt }}</h4>
+  <h4>Lớp: {{ object.lop }}</h4>
+  <h4>Học kỳ: {{ object.hoc_ky }} </h4>
+  <h4>Năm học: {{ object.nam_hoc }} </h4>  
+  <h4>Ngày thi: {{ object.ngay_thi|date:"d / m / Y" }}</h4>
+  <h4>Số đề thi cần sinh ra: {{ object.so_de_thi }}</h4>
+  
+  <form action="sinhde/" method="POST">
+  {% csrf_token %}
+  	<h4>Chọn một trong các bộ đề sau: </h4>
+  	{% for bo_de in ds_bo_de %}
+  		<input type="radio" name="bo_de" value="{{ bo_de.id }}"> {{ bo_de.ma_so }} </input>
+  		<br />
+  	
+  	{% empty %}
+  	{% endfor %}
+  	<br />
+ 	
+ 	<input class="btn btn-primary btn-lg" type = "submit" name="sinhde" value="Sinh đề thi mới" />
+  	<br />
+  </form>
+ 
+
+<h3>Các đề đã được sinh ra:
+  {% for dt in object.ds_de_thi.all %}
+  	<a href='/quiz/tuluan/preview/dethi/{{ dt.pk }}/'> Đề {{ forloop.counter }}</a>
+  	
+  {% empty %}
+  <h4>Chưa có đề thi nào</h4>
+  {% endfor %} 
+  </h3>
+</div>
+{% endblock %}

@@ -579,8 +579,8 @@ class DeThi(models.Model):
         return questions
     
 class NganHangDeThiTuLuan(models.Model):
-#     ma_so = CharField(max_length=20, unique=True,
-#                       verbose_name="Mã bộ đề")
+    ma_so = CharField(max_length=20, unique=False, blank=True, null=True,
+                    verbose_name="Mã bộ đề")
     
     doi_tuong = ForeignKey(DoiTuong,
                            blank=False, null=False,
@@ -593,12 +593,16 @@ class NganHangDeThiTuLuan(models.Model):
     
     class Meta:
         verbose_name='Bộ đề thi tự luận'
+        verbose_name_plural="Bộ đề thi tự luận"
     
     def __unicode__(self):
         return u'%s(%s)' %(self.mon_thi, self.doi_tuong)
     
     
     def save(self, *args, **kwargs):
+        self.ma_so = '%s.%s.%s.%s.%s' %(self.doi_tuong.ma_dt, self.mon_thi.ma_mon_thi,
+                                        self.ngay_tao.day, self.ngay_tao.month, self.ngay_tao.year)
+        
         super(NganHangDeThiTuLuan, self).save(*args, **kwargs)
         # ma = ma doi tuong.ma mon.ngay.thang.nam
     
@@ -609,14 +613,21 @@ class DeThiTuLuan(models.Model):
     ngan_hang = models.ForeignKey(NganHangDeThiTuLuan,
                                   verbose_name="Ngân hàng")
     
-    ma_de_thi = models.CharField(max_length=10, unique=True,
+    ma_de_thi = models.CharField(max_length=10, #unique=True,
                                  verbose_name="Mã đề thi")
     
     de_thi = models.FileField(upload_to='uploads/essay/%Y/%m/%d',
                                blank=True,
                                null=True,
                                verbose_name=("Đề thi"))
-    
+    dap_an = models.FileField(upload_to='uploads/essay/%Y/%m/%d',
+                               blank=True,
+                               null=True,
+                               verbose_name=("Đáp án"))
+    class Meta:
+        verbose_name="Đề thi tự luận"
+        verbose_name_plural="Danh sách đề thi tự luận"
+        
     def __unicode__(self):
         return u'%s (%s)' %(self.ma_de_thi, self.ngan_hang)
     

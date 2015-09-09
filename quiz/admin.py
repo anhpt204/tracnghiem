@@ -21,6 +21,7 @@ from django.contrib.auth.models import User
 from tracnghiem import settings
 # from httplib import HTTPResponse
 from django.http.response import HttpResponse
+from os.path import basename
 
 class AnswerInLine(TabularInline):
     model = Answer
@@ -51,8 +52,39 @@ class DeThiTuLuanInline(TabularInline):
 class DeThiTuLuanAdmin(ModelAdmin):
     model = DeThiTuLuan
     
-    list_display =['ma_de_thi', 'ngan_hang', 'de_thi', 'view_pdf']
+    list_display =['ma_de_thi', 'get_doi_tuong', 'get_mon_thi', 'get_de_thi','get_dap_an']
     
+    list_filter =('ngan_hang__doi_tuong', 'ngan_hang__mon_thi',)
+    search_fields = ['ma_de_thi',]
+    
+    def get_doi_tuong(self, obj):
+        if obj.ngan_hang:
+            return obj.ngan_hang.doi_tuong.ten_dt
+    get_doi_tuong.allow_tags=True
+    get_doi_tuong.short_description="Đối tượng"
+
+    def get_mon_thi(self, obj):
+        if obj.ngan_hang:
+            return obj.ngan_hang.mon_thi
+    get_mon_thi.allow_tags=True
+    get_mon_thi.short_description="Môn thi"
+        
+    def get_de_thi(self, obj):
+        if obj.de_thi:
+            return u'<a href="%s">%s</a>' % ('/quiz/tuluan/preview/dethi/'+str(obj.pk)+'/', basename(obj.de_thi.path))
+        else:
+            return u'(Chưa có)'
+    get_de_thi.allow_tags=True
+    get_de_thi.short_description="Đề thi"
+
+    def get_dap_an(self, obj):
+        if obj.dap_an:
+            return u'<a href="%s">%s</a>' % ('/quiz/tuluan/preview/dapan/'+str(obj.pk)+'/', basename(obj.dap_an.path))
+        else:
+            return u'(Chưa có)'
+    get_dap_an.allow_tags=True
+    get_dap_an.short_description="Đáp án"
+        
     def view_pdf(self,obj):
         if obj.de_thi:            
             return u'<a href="%s">View</a>' % ('/quiz/tuluan/preview/'+str(obj.pk)+'/')
@@ -144,7 +176,7 @@ class DoiTuongAdmin(ModelAdmin):
 class NganHangDeThiTuLuanAdmin(ModelAdmin):
     model = NganHangDeThiTuLuan
     inlines=[DeThiTuLuanInline]
-    list_display = ['doi_tuong', 'mon_thi', 'ngay_tao']
+    list_display = ['ma_so', 'doi_tuong', 'mon_thi', 'ngay_tao']
     
 class MonThiAdmin(ModelAdmin):
     model=MonThi

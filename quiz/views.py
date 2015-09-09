@@ -9,7 +9,8 @@ from django.contrib.auth import authenticate, login
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
-from quiz.models import MonThi, CaThi, DeThi, Question, Answer, DeThiTuLuan
+from quiz.models import MonThi, CaThi, DeThi, Question, Answer, DeThiTuLuan,\
+    CaThiTuLuan, NganHangDeThiTuLuan
 from django.template import loader
 from django.views.decorators.csrf import csrf_protect
 from datetime import date, datetime
@@ -20,6 +21,7 @@ import json
 from quiz import ESSAYQUESTION, TFQUESTION
 from django.utils.datastructures import MultiValueDictKeyError
 from os.path import basename
+import random
 
 def index(request):
     return HttpResponse("Hello, world. You're at the polls index.")
@@ -107,3 +109,47 @@ def view_pdf(request, pk):
         return response
     else:
         return HttpResponse(u'No file %s' %(file_name))
+    
+class CaThiTuLuanView(DetailView):
+    model = CaThiTuLuan
+    template_name='cathituluan.html'
+    
+    def get_context_data(self, **kwargs):
+        context = DetailView.get_context_data(self, **kwargs)
+        # neu da co de roi, thi khong sinh de moi nua
+        dethi_tmp = self.object.ds_de_thi.all()
+        if dethi_tmp and len(dethi_tmp)==self.object.so_de_thi:
+            context['ds_de_thi'] = self.object.ds_de_thi.all()
+            return context
+        # lay tat ca ca thi cua cua hoc ky, cung doi tuong va mon thi
+        same_cathi = CaThiTuLuan.objects.filter(nam_hoc=self.object.nam_hoc,
+                                                hoc_ky=self.object.hoc_ky,
+                                                doi_tuong=self.object.doi_tuong,
+                                                mon_thi=self.object.mon_thi)
+        de_da_thi = set()
+        for ct in same_cathi:
+            if ct != self.object:
+                de_da_thi.update(set(ct.ds_de_thi.all()))
+            
+        # lay ngan hang de thi tuong ung voi doi_tuong va mon_thi
+        ngan_hang = NganHangDeThiTuLuan.objects.filter(doi_tuong=self.object.doi_tuong, 
+                                                          mon_thi=self.object.mon_thi)
+        
+        ngan_hang_dt = DeThiTuLuan.objects.filter(ngan_hang=ngan_hang[0])
+        # tao danh sach de chua thi
+        de_chua_thi = set(ngan_hang_dt).difference(de_da_thi)
+        # lay so_de_thi
+        de_thi_s = random.sample(de_chua_thi, self.object.so_de_thi)
+
+        for de_thi in de_thi_s:
+            self.object.ds_de_thi.add(de_thi)
+                
+        self.object.save()
+        
+        context['ds_de_thi'] = de_thi_s
+        
+        return context
+    
+def get_dt(request, pk):
+    ca_thi = CaThiTuLuan.objects.get(pk=pk)
+    

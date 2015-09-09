@@ -5,6 +5,9 @@ TFQUESTION='TF'
 MCQUESTION='MC'
 ESSAYQUESTION='ESSAY'
 
+HK1 = 'HK1'
+HK2 = 'HK2'
+
 QUESTION_TYPES=(
                (TFQUESTION, 'Câu hỏi Đúng - Sai'),
                (MCQUESTION, 'Câu hỏi Multiple Choice'),
@@ -22,3 +25,8 @@ ANSWER_ORDER_OPTIONS = (
     ('RANDOM', 'Ngẫu nhiên'),
     ('NONE', 'None')
 )
+
+HOC_KY = (
+          (HK1, 'Học kỳ 1'),
+          (HK2, 'Học kỳ 2')
+          )

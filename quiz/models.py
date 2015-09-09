@@ -22,6 +22,7 @@ from quiz import *
 from smart_selects.db_fields import ChainedForeignKey
 from datetime import datetime, date
 import random
+from django.utils import timezone
 
 class DonVi(models.Model):
     ma_dv = CharField(verbose_name="Mã đơn vị", unique = True, max_length=5,
@@ -578,6 +579,9 @@ class DeThi(models.Model):
         return questions
     
 class NganHangDeThiTuLuan(models.Model):
+#     ma_so = CharField(max_length=20, unique=True,
+#                       verbose_name="Mã bộ đề")
+    
     doi_tuong = ForeignKey(DoiTuong,
                            blank=False, null=False,
                            verbose_name="Đối tượng thi")
@@ -585,13 +589,18 @@ class NganHangDeThiTuLuan(models.Model):
     mon_thi = ForeignKey(MonThi,
                          blank=False, null=False,
                          verbose_name="Môn thi")
-    ngay_tao = models.DateField('Ngày tạo', default=date.today())
+    ngay_tao = models.DateField('Ngày tạo', default=timezone.now)
     
     class Meta:
-        verbose_name='Ngân hàng đề thi tự luận'
+        verbose_name='Bộ đề thi tự luận'
     
     def __unicode__(self):
         return u'%s(%s)' %(self.mon_thi, self.doi_tuong)
+    
+    
+    def save(self, *args, **kwargs):
+        super(NganHangDeThiTuLuan, self).save(*args, **kwargs)
+        # ma = ma doi tuong.ma mon.ngay.thang.nam
     
 class DeThiTuLuan(models.Model):
     '''
@@ -612,23 +621,39 @@ class DeThiTuLuan(models.Model):
         return u'%s (%s)' %(self.ma_de_thi, self.ngan_hang)
     
 class CaThiTuLuan(models.Model):
+    ten_ca_thi = CharField(max_length=100,
+                           verbose_name="Tiêu đề ca thi")
+    
+    nam_hoc = CharField(max_length=9,
+                        verbose_name="Năm học",
+                        help_text="Nhập năm học theo định dạng XXXX-XXXX. Ví dụ 2015-2016")
+    
+    hoc_ky = CharField(max_length=3,
+                              choices=HOC_KY,
+                            default=HK1,
+                            verbose_name="Học kỳ")
+
     doi_tuong = ForeignKey(DoiTuong,
                            verbose_name="Đối tượng")
+    
     mon_thi = ForeignKey(MonThi,
                          verbose_name = "Môn thi")
+    
     lop = ForeignKey(Lop,
                      verbose_name = "Lớp")
-    ngay_thi = DateField(verbose_name="Ngày thi")
-    
-#     giam_thi = ManyToManyField(GiaoVien, verbose_name = u'Danh sách giám thị coi thi')
 
-    giam_thi = ManyToManyField(GiaoVien, blank=False,
-                                verbose_name = u"GT")
+    ngay_thi = DateField(verbose_name="Ngày thi")
+#     
+    giam_thi = ManyToManyField(GiaoVien, blank=False, 
+                              verbose_name=u'Danh sách giám thị coi thi')
+
+#     giam_thi = ManyToManyField(GiaoVien, blank=False,
+#                                 verbose_name = u'GT')
     
     so_de_thi = PositiveIntegerField(verbose_name = "Số đề thi",
                                      default=1,
                                      help_text = u"Số đề thi là số nguyên dương, lớn hơn 0")
-    ds_de_thi = ManyToManyField(DeThiTuLuan, blank=True, null=True,
+    ds_de_thi = ManyToManyField(DeThiTuLuan, blank=True,
                                 verbose_name = u'DT')
 
     class Meta:
@@ -638,12 +663,12 @@ class CaThiTuLuan(models.Model):
     def __unicode__(self):
         return u'%s-%s-%s' %(self.doi_tuong, self.mon_thi, self.lop)
     
-    def save(self, *args, **kwargs):
-        # lay ngan hang de thi tuong ung voi doi_tuong va mon_thi
-        ngan_hang_dt = NganHangDeThiTuLuan.objects.filter(doi_tuong=self.doi_tuong, 
-                                                          mon_thi=self.mon_thi)
-        # lay so_de_thi
-        de_thi_s = random.sample(ngan_hang_dt, self.so_de_thi)
-        for de_thi in de_thi_s:
-            self.ds_de_thi.add(de_thi)
-        super(CaThiTuLuan, self).save(*args, **kwargs)
+#     def save(self, *args, **kwargs):
+#         # lay ngan hang de thi tuong ung voi doi_tuong va mon_thi
+#         ngan_hang_dt = NganHangDeThiTuLuan.objects.filter(doi_tuong=self.doi_tuong, 
+#                                                           mon_thi=self.mon_thi)
+#         # lay so_de_thi
+#         de_thi_s = random.sample(ngan_hang_dt, self.so_de_thi)
+#         for de_thi in de_thi_s:
+#             self.ds_de_thi.add(de_thi)
+#         super(CaThiTuLuan, self).save(*args, **kwargs)

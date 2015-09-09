@@ -208,7 +208,19 @@ class EssayQuestionAdmin(ModelAdmin):
     
 class CaThiTuLuanAdmin(ModelAdmin):
     model=CaThiTuLuan
-#     fields=('doi_tuong', 'mon_thi', 'lop', 'ngay_thi', 'giam_thi', 'so_de_thi')
+    filter_horizontal =('giam_thi',)
+    
+    fields=('ten_ca_thi', 'nam_hoc', 'hoc_ky', 'doi_tuong', 'mon_thi', 'lop', 'ngay_thi', 'giam_thi', 'so_de_thi')
+    list_display=('ten_ca_thi', 'nam_hoc', 'hoc_ky', 'doi_tuong', 'mon_thi', 'lop', 'ngay_thi', 'so_de_thi', 'get_de_thi')
+    
+    def get_de_thi(self, obj):
+        if obj.ds_de_thi    :            
+            return u'<a href="%s">Tạo đề</a>' % ('/quiz/tuluan/get_dt/'+str(obj.pk)+'/')
+        else:
+            return '(no file found)'
+        
+    get_de_thi.allow_tags = True
+    get_de_thi.short_description = 'Đề thi'
     
 admin.site.register(DonVi, DonViAdmin)
 admin.site.register(DoiTuong, DoiTuongAdmin)

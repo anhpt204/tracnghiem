@@ -61,8 +61,8 @@ ROOT_URLCONF = 'tracnghiem.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['/home/pta/projects/tracnghiem/templates/',
-                 '/home/pta/projects/tracnghiem/templates/quiz/'],
+        'DIRS': ['/home/pta/git/tracnghiem/templates/',
+                 '/home/pta/git/tracnghiem/templates/quiz/'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

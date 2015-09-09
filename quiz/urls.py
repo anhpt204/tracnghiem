@@ -7,7 +7,7 @@ Created on Jun 8, 2015
 from django.conf.urls import url
 
 from . import views
-from quiz.views import CathiDetailView, DethiStartView
+from quiz.views import CathiDetailView, DethiStartView, CaThiTuLuanView
 
 urlpatterns = [
     url(r'^$', views.index, name='index'),
@@ -17,5 +17,6 @@ urlpatterns = [
     url(r'^cathi/(?P<pk>[\d]+)/start/$', DethiStartView.as_view(), name='dethi_start'),
     url(r'^cathi/(?P<pk>[\d]+)/start/finish/$', views.quiz_finish, name='quiz_finish'),
     url(r'^tuluan/preview/(?P<pk>[\d]+)/$', views.view_pdf, name='view_pdf'),
+    url(r'^tuluan/get_dt/(?P<pk>[\d]+)/$', CaThiTuLuanView.as_view(), name='get_dt'),
     
 ]

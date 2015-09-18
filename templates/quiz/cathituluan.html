@@ -1,0 +1,43 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+{% extends 'base.html' %}
+
+
+
+{% block title %}
+Danh sách đề thi
+{% endblock %}
+
+
+{% block content %}
+<div class="jumbotron">
+  <h1>{{ object.ten_ca_thi }}</h1>
+  <h4>Năm học: {{ object.nam_hoc }}</h4>
+  <h4>Học kỳ: {{ object.hoc_ky }}</h4>
+  
+  <h4>Môn thi: {{ object.mon_thi }}</h4>
+  <h4>Lớp: {{ object.lop }}</h4>
+  <h4>Ngày thi: {{ object.ngay_thi|date:"d/m/Y" }}</h4>
+  
+  <h4>Giám thị:
+  	<h5>
+  	{% for gt in object.giam_thi.all %}
+  		 {{ forloop.counter }}. {{ gt.ho_ten }} <br />
+  	{% empty %}
+  		<li>Không có giám thị</li>
+  	{% endfor %}
+  	</h5>
+  </h4>
+
+	<h4>Đề thi:
+	{% for dt in ds_de_thi %}
+		<a href='/quiz/tuluan/preview/{{ dt.pk }}/'> Đề {{ forloop.counter }}:</a> <br />
+	{% empty %}
+  		<li>Chưa có đề thi</li>	
+	{% endfor %} 
+	</h4>
+</div>
+
+
+
+{% endblock %}

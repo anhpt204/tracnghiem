@@ -9,4 +9,4 @@ from django.apps import AppConfig
 
 class QuizConfig(AppConfig):
     name = "quiz"
-    verbose_name = u"Ca thi"
+    verbose_name = u"Kế hoạch thi"

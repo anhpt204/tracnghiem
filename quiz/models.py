@@ -668,8 +668,8 @@ class CaThiTuLuan(models.Model):
                                 verbose_name = u'DT')
 
     class Meta:
-        verbose_name = u"Ca thi tự luận"
-        verbose_name_plural = u"Danh sách ca thi tự luận"
+        verbose_name = u"Kế hoạch thi - bốc đề"
+        verbose_name_plural = u"Kế hoạch thi - bốc đề"
 
     def __unicode__(self):
         return u'%s-%s-%s' %(self.doi_tuong, self.mon_thi, self.lop)
